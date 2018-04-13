@@ -1,0 +1,82 @@
+$(document).ready ->
+  step = 0
+  steps = []
+  stepsflag = []
+  lg = 0
+
+  pathStartPoint = (path) ->
+    d = path.attr('d')
+    dsplitted = d.split(' ')
+    dsplitted[1].split ','
+  
+  transitionCircle =  (markers, path) ->
+    if path
+      for marker, i in markers
+        marker.transition().ease('linear').duration(10500).attrTween('style', translateAlongCircle(path.node(), marker, i)).each 'end', ->
+            transitionCircle(markers, path)
+
+
+  translateAlongCircle = (path, marker, idx) ->
+    l = path.getTotalLength()
+    ml = marker[0][0].getTotalLength()
+    m = marker[0][0].getPointAtLength(0 * ml)
+    cm = marker[0][0].getPointAtLength(1 * ml)
+    r=0
+    rDiff = Math.random() * (3 - 10) + 3
+    (d, i, a) ->
+      (t) ->
+        r+=rDiff
+        if ( steps[idx] > t)
+          p = path.getPointAtLength((steps[idx] - t) * l)
+        else
+          p = path.getPointAtLength( (1 + (steps[idx] - t) ) * l)
+        pmx = p.x-m.x
+        pmy = p.y-m.y
+
+        "transform-origin:50% 50%;transform:translate(#{pmx}px,#{pmy}px) rotate(#{r}deg); transition: none; -webkit-transform:translate(#{pmx}px,#{pmy}px) rotate(#{r}deg);-webkit-transform-origin:50% 50%;"
+
+  transition = (markers, path)->
+    step = 0
+    steps = []
+    if path
+      for marker, i in markers
+        translate = translateAlong(path.node(), marker, markers.length)
+        marker.attr('style', ''+ translate)
+      setTimeout ->
+        transitionCircle(markers, path)
+      , 500
+    return
+
+
+  translateAlong = (path, marker, count) ->
+    l = path.getTotalLength()
+    lg = l
+    step = step + 1/count
+    steps.push(step)
+    stepsflag.push(true)
+    p = path.getPointAtLength(step * l)
+    ml = marker[0][0].getTotalLength()
+    m = marker[0][0].getPointAtLength(0 * ml)
+    cm = marker[0][0].getPointAtLength(1 * ml)
+    pmx = p.x-m.x
+    pmy = p.y-m.y
+    "transform:translate(#{ pmx }px,' + pmy + 'px);-webkit-transform:translate(#{pmx}px, #{pmy}px);"
+
+
+  rotateWe = (pathName, elemName) ->
+    markers = []
+    path = d3.select('#circle')
+    startPoint = pathStartPoint(path)
+    
+    $('.fill').each (i, elem) ->
+      markers.push d3.select(elem)
+    console.log('anim',markers)
+    transition(markers, path)
+
+  $('.wrapper-hover').hover (->
+    $(this).addClass('active');
+    rotateWe('circle', '.fill')
+  ), ->
+    $(this).removeClass('active');
+    d3.selectAll('.fill').transition().duration(0).each 'end', ->
+      d3.select(this).attr('style', '')
